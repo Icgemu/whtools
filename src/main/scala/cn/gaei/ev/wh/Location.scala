@@ -14,7 +14,7 @@ import org.geotools.geometry.jts.JTSFactoryFinder
 
 import scala.io.Source
 
-object LonLatToCity {
+object Location {
 
   case class CITY(i:Int,pid:String, id:String,en:String,zh:String,poly:String)
   case class Name(id:String, city:String)
