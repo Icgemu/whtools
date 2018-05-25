@@ -1,2 +1,6 @@
 *.class
 *.log
+*.txt
+
+target/
+.idea/
