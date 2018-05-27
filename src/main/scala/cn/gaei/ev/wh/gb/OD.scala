@@ -1,4 +1,4 @@
-package cn.gaei.ev.wh.ag
+package cn.gaei.ev.wh.gb
 
 import java.io.PrintWriter
 
@@ -85,21 +85,20 @@ object OD {
       tripSegment(arr)
     })
 
-    val data = sc.read.parquet("/data/ag/parquet/*")
+    val data = sc.read.parquet("/data/gb/parquet/*")
 
     import sc.implicits._
 
-    val out = new PrintWriter("./LMGGN1S55F1000510.csv")
+    val out = new PrintWriter("./LMGHP1S81H1000113.csv")
     val ws1 = Window.partitionBy($"vin").orderBy($"ts").rowsBetween(-1, 0)
 
-    data.filter($"vin".equalTo("LMGGN1S55F1000510"))
-      .filter($"date_str".startsWith("2018051"))
-      .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293 && $"loc_lat84" < 55.8271)
-      .filter($"icm_totalodometer" > 0)
-      .withColumn("keyst", when(($"bcm_keyst".isNull) || $"bcm_keyst".equalTo(0), 0).otherwise(1))
+    data.filter($"vin".equalTo("LMGHP1S81H1000113"))
+      .filter($"d".startsWith("2018051"))
+      .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293 && $"loc_lat84" < 55.8271 && $"veh_odo"> 0)
+      .withColumn("keyst", when($"veh_st".equalTo(1), 1).otherwise(0))
       .withColumn("tripst", callUDF("tripst", collect_list(struct($"ts", $"keyst")).over(ws1)))
       .withColumn("tripId", callUDF("tripSegment", collect_list(struct($"vin",$"tripst")).over(ws1)))
-      .select($"date_str",from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),$"loc_lon84",$"loc_lat84",$"icm_totalodometer",$"bcm_keyst", $"keyst",$"tripst",$"tripid")
+      .select($"d",from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),$"loc_lon84",$"loc_lat84",$"veh_odo",$"veh_st", $"keyst",$"tripst",$"tripid")
       .sort($"ts")
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
     out.close()
