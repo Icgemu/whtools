@@ -1,4 +1,4 @@
-package cn.gaei.ev.wh
+package cn.gaei.wh
 
 import ch.hsr.geohash.GeoHash
 import com.vividsolutions.jts.geom.{Coordinate, Geometry, Point}

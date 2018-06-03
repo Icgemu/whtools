@@ -1,4 +1,4 @@
-package cn.gaei.ev.wh;
+package cn.gaei.wh;
 
 /**
  * Hello world!

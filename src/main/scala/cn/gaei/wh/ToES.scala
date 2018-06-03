@@ -1,4 +1,4 @@
-package cn.gaei.ev.wh
+package cn.gaei.wh
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
