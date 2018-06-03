@@ -1,6 +1,7 @@
 *.class
 *.log
 *.txt
+.DS_Store
 
 target/
 .idea/
