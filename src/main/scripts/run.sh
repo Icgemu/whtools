@@ -19,6 +19,8 @@ CONF="$APPLICATION_HOME/conf/spark-custom.conf"
 
 MAIN_CLASS="cn.gaei.ev.wh.LonLatToCity"
 
-ARGS="$APPLICATION_HOME/conf/rel_path_added.txt"
+FILES="$APPLICATION_HOME/conf/rel_path_added.txt"
 
-$SPARK_SUBMIT --jars "$JARS" --properties-file $CONF  --class $MAIN_CLASS  $JAR $ARGS
+ARGS=
+
+$SPARK_SUBMIT --jars "$JARS" --file $FILES --properties-file $CONF  --class $MAIN_CLASS  $JAR $ARGS
