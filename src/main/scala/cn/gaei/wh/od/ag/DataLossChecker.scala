@@ -16,9 +16,8 @@ object DataLossChecker {
     val data = sc.read.parquet("/data/AG/parquet/d=2018*")
 
     import sc.implicits._
-    import cn.gaei.ev.wh.od._
+    import cn.gaei.wh._
     val out = new PrintWriter("./LMGGN1S55F1000510.csv")
-    val ws1 = Window.partitionBy($"vin").orderBy($"ts").rowsBetween(-1, 0)
 
     data
       .filter($"vin".equalTo("LMGGN1S55F1000510"))

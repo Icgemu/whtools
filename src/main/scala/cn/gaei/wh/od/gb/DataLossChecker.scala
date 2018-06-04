@@ -15,7 +15,7 @@ object DataLossChecker{
     val data = sc.read.parquet("/data/gb/parquet/*")
 
     import sc.implicits._
-    import cn.gaei.ev.wh.od._
+    import cn.gaei.wh._
     data
       .filter($"vin".equalTo("LMGHP1S81H1000113"))
       .filter($"d".startsWith("2018051"))

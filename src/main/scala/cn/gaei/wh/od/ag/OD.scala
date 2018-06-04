@@ -16,7 +16,7 @@ object OD {
     val data = sc.read.parquet("/data/ag/parquet/*")
 
     import sc.implicits._
-    import cn.gaei.ev.wh.od._
+    import cn.gaei.wh._
 
     val out = new PrintWriter("./LMGGN1S55F1000510.csv")
     data.filter($"vin".equalTo("LMGGN1S55F1000510"))
