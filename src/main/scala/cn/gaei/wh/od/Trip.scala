@@ -1,6 +1,6 @@
 package cn.gaei.wh.od
 
-import ODUtils.{KeySt, Segment}
+import ODUtils.{KeySt, LossSt, Segment}
 import org.apache.spark.sql.{Column, DataFrame, Dataset, Row}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{callUDF, collect_list, struct}
@@ -46,9 +46,9 @@ object Trip extends Serializable{
     res
   }
 
-  private[this] def _lossSt(e: Seq[Row]): Int = {
+  private[this] def _lossSt(e: Seq[Row]): LossSt = {
 
-    var res = 0
+    var res = LossSt(0,0,0)
     if (e.size == 2) {
       val t1 = e(0).getLong(0)
       val t2 = e(1).getLong(0)
@@ -58,11 +58,15 @@ object Trip extends Serializable{
 
       val f1 = e(0).getInt(2)
       val f2 = e(1).getInt(2)
+
+      val s1 = e(0).getInt(3)
+      val s2 = e(1).getInt(3)
+
       if(f2 != f1){
 
-        val sp = ((o2 - o1 ) * 3600.0)/(((t2 - t1) / 1000.0))
-        if(sp > 10){
-          res = 1
+        val avg_speed = ((o2 - o1 ) * 3600.0)/(((t2 - t1) / 1000.0))
+        if(s1 == 2 && s2 == 1 && avg_speed > 10){
+          res = LossSt(1, (t2 - t1) / 1000, o2 - o1)
         }
       }
     }
@@ -110,9 +114,9 @@ object Trip extends Serializable{
     import sc.implicits._
     val ws1 = Window.partitionBy(vin).orderBy(ts).rowsBetween(-1, 0)
     val dff = ds.withColumn("_genSt", callUDF("_genSt", collect_list(struct(ts, keyst)).over(ws1)))
-      .withColumn("_tripId", callUDF("_genTripLoss", collect_list(struct(vin,ts, $"_genSt",odo)).over(ws1)))
-      .withColumn(id, callUDF("_lossSt", collect_list(struct(ts,odo,$"_tripId")).over(ws1)))
-    dff.drop("_genSt","_tripId")
+      .withColumn("tripId", callUDF("_genTripLoss", collect_list(struct(vin,ts, $"_genSt",odo)).over(ws1)))
+      .withColumn(id, callUDF("_lossSt", collect_list(struct(ts, odo, $"tripId", $"_genSt")).over(ws1)))
+    dff.drop("_genSt")
   }
 
 }
