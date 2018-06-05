@@ -3,6 +3,7 @@ package cn.gaei.wh
 import ch.hsr.geohash.GeoHash
 import com.vividsolutions.jts.geom.{Coordinate, Geometry, Point}
 import com.vividsolutions.jts.io.WKTReader
+import org.apache.spark.SparkFiles
 import org.apache.spark.sql.{Column, DataFrame, Dataset}
 import org.apache.spark.sql.functions.{callUDF, count}
 import org.geotools.geometry.jts.JTSFactoryFinder
@@ -16,15 +17,16 @@ object Location {
   private[this] case class Name(id: String, city: String)
   private[this] case class LonLat(lat: Double, lon: Double)
 
-  private[this] val __id_city = collection.mutable.Map[Int, CITY]()
-  private[this] val __poly_to_id = collection.mutable.ArrayBuffer[(Int, Geometry, Geometry)]()
+  //private[this] var __id_city = collection.mutable.Map[Int, CITY]()
+  //private[this] var __poly_to_id = collection.mutable.ArrayBuffer[(Int, Geometry, Geometry)]()
   private[this] val __geometryFactory = JTSFactoryFinder.getGeometryFactory(null)
 
-  private[this] def _readBoundary(path: String): Unit = {
+  private[this] def _readBoundary(path: String): collection.mutable.Map[Int, CITY] = {
     val source = Source.fromFile(path, "utf8")
     val lines = source.getLines
     //map id -> city info
     var i = 0
+    var __id_city = collection.mutable.Map[Int, CITY]()
     for (line <- lines) {
 
       val splits = line.split(";")
@@ -50,20 +52,13 @@ object Location {
         }
 
       }
-
     }
 
-
-    val reader = new WKTReader(__geometryFactory)
-    __id_city.foreach(item => {
-      val (id, city) = item
-      val poly = reader.read(city.poly)
-      val envelope = poly.getEnvelope()
-      __poly_to_id.append((id, envelope, poly))
-    })
+    __id_city
   }
 
-  private[this] def _getName(id: Int): String = {
+
+  private[this] def _getName(id: Int, __id_city : collection.mutable.Map[Int, CITY]): String = {
     var record = __id_city.get(id)
     var name = ""
     while (!record.isEmpty) {
@@ -86,7 +81,9 @@ object Location {
     name.substring(1)
   }
 
-  private[this] def _getClosedRegion(code: String, point: Point) = {
+  private[this] def _getClosedRegion(code: String, point: Point,
+                                     __poly_to_id: collection.mutable.ArrayBuffer[(Int, Geometry, Geometry)],
+                                     __id_city : collection.mutable.Map[Int, CITY]) = {
     val c = __poly_to_id.filter(e => {
       point.within(e._2)
     })
@@ -102,7 +99,7 @@ object Location {
     if (d.size > 0) {
       val i = d.head._1
       val city_id = __id_city.get(i).get.id
-      val city_name = _getName(i)
+      val city_name = _getName(i,__id_city)
       Name(city_id, city_name)
     } else {
       Name("None", "None")
@@ -110,15 +107,21 @@ object Location {
   }
 
   def setLocation[T: ClassTag](ds: Dataset[T], locationIdName: String, LocationCityName: String, lat: Column, lon: Column): DataFrame = {
-
     val sc = ds.sparkSession
 
-    val boundary_path = sc.conf.get("wh.loc.boundary.path", "rel_path_added.txt")
-
-    _readBoundary(boundary_path)
+    val boundary_path = sc.conf.get("wh.loc.boundary.path", SparkFiles.get("rel_path_added.txt"))
+    val b_val = sc.sparkContext.broadcast(_readBoundary(boundary_path))
+    val reader = new WKTReader(__geometryFactory)
+    val __poly_to_id = collection.mutable.ArrayBuffer[(Int, Geometry, Geometry)]()
+    b_val.value.foreach(item => {
+      val (id, city) = item
+      val poly = reader.read(city.poly)
+      val envelope = poly.getEnvelope()
+      __poly_to_id.append((id, envelope, poly))
+    })
 
     import sc.implicits._
-    sc.udf.register("geo", (lon: Double, lat: Double) => {
+    sc.udf.register("geo", (lat: Double, lon: Double) => {
       GeoHash.geoHashStringWithCharacterPrecision(lat, lon, 7)
     })
 
@@ -128,12 +131,12 @@ object Location {
       val p = hash.getPoint()
       val coord = new Coordinate(p.getLongitude(), p.getLatitude());
       val point = __geometryFactory.createPoint(coord);
-      val res = _getClosedRegion(code, point)
+      val res = _getClosedRegion(code, point, __poly_to_id, b_val.value)
       res
     })
 
     val __code_file = ds
-      .withColumn("__loc_code", callUDF("geo", lon, lat))
+      .withColumn("__loc_code", callUDF("geo", lat, lon))
 
     val __name_file = __code_file.groupBy($"__loc_code").agg(count("*").as("cnt"))
       .withColumn("__name", callUDF("getCityName", $"__loc_code"))

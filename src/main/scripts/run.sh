@@ -23,4 +23,4 @@ FILES="$APPLICATION_HOME/conf/rel_path_added.txt"
 
 ARGS=
 
-$SPARK_SUBMIT --jars "$JARS" --file $FILES --properties-file $CONF  --class $MAIN_CLASS  $JAR $ARGS
+$SPARK_SUBMIT --jars "$JARS" --files $FILES --properties-file $CONF  --class $MAIN_CLASS  $JAR $ARGS

@@ -60,7 +60,7 @@ object Trip extends Serializable{
       val f2 = e(1).getInt(2)
       if(f2 != f1){
 
-        val sp = (o2 - o1 )/((t2 - t1) / 1000.0) / 3600.0
+        val sp = ((o2 - o1 ) * 3600.0)/(((t2 - t1) / 1000.0))
         if(sp > 10){
           res = 1
         }
