@@ -74,7 +74,8 @@ object Trip extends Serializable{
   }
 
 
-  def od[T : ClassTag](ds: Dataset[T],id: String,vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
+  def od[T : ClassTag](ds: Dataset[T],id: String,
+                       vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
     val sc = ds.sparkSession
 
     sc.udf.register("_genSt", (e: Seq[Row]) => {
