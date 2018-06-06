@@ -19,7 +19,7 @@ object OD {
 
     val out = new PrintWriter("./LMGHP1S81H1000113.csv","UTF-8")
 
-    data.filter($"vin".equalTo("LMGHP1S81H1000113"))
+    val cache = data.filter($"vin".equalTo("LMGHP1S81H1000113"))
 //      .filter($"d".startsWith("2018051"))
       .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293
         && $"loc_lat84" < 55.8271 && $"veh_odo"> 0)
@@ -28,7 +28,8 @@ object OD {
       .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
       .select(from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
         $"loc_lon84",$"loc_lat84",$"city_id",$"city_name",$"veh_odo",$"veh_st", $"keyst",$"tripId")
-      .sort($"ts")
+//      .sort($"ts")
+//      val stat = cache.groupBy($"vin",$"tripId").agg(collect_list($"ts",))
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
     out.close()
 

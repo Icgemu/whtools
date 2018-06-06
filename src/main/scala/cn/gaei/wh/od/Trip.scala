@@ -1,6 +1,6 @@
 package cn.gaei.wh.od
 
-import ODUtils.{KeySt, LossSt, Segment}
+import TripUtils.{KeySt, LossSt, Segment}
 import org.apache.spark.sql.{Column, DataFrame, Dataset, Row}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{callUDF, collect_list, struct}
@@ -18,7 +18,7 @@ object Trip extends Serializable{
         }
       }
       case 2 => {
-        ODUtils.getODSt(e(0), e(1))
+        TripUtils.getODSt(e(0), e(1))
       }
     }
     res
@@ -29,7 +29,7 @@ object Trip extends Serializable{
     val res = e.size match {
       case 1 => -1
       case 2 => {
-        ODUtils.getTripUuid(e(0), e(1), true)
+        TripUtils.getTripUuid(e(0), e(1), true)
       }
     }
     res
@@ -40,7 +40,7 @@ object Trip extends Serializable{
     val res = e.size match {
       case 1 => -1
       case 2 => {
-        ODUtils.getTripUuid(e(0), e(1), false)
+        TripUtils.getTripUuid(e(0), e(1), false)
       }
     }
     res
@@ -62,10 +62,10 @@ object Trip extends Serializable{
       val s1 = e(0).getInt(3)
       val s2 = e(1).getInt(3)
 
-      if(f2 != f1){
-
+      if (f2 != f1) {
         val avg_speed = ((o2 - o1 ) * 3600.0)/(((t2 - t1) / 1000.0))
-        if(s1 == 2 && s2 == 1 && avg_speed > 10){
+        val is_data_loss = (s1 == 2 && s2 == 1 && avg_speed > 10)
+        if (is_data_loss) {
           res = LossSt(1, (t2 - t1) / 1000, o2 - o1)
         }
       }
