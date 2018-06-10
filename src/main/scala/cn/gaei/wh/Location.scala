@@ -129,8 +129,8 @@ object Location {
 
       val hash = GeoHash.fromGeohashString(code)
       val p = hash.getPoint()
-      val coord = new Coordinate(p.getLongitude(), p.getLatitude());
-      val point = __geometryFactory.createPoint(coord);
+      val coord = new Coordinate(p.getLongitude(), p.getLatitude())
+      val point = __geometryFactory.createPoint(coord)
       val res = _getClosedRegion(code, point, __poly_to_id, b_val.value)
       res
     })
