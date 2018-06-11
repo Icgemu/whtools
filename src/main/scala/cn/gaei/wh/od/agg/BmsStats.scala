@@ -86,14 +86,14 @@ class BmsStats extends UserDefinedAggregateFunction {
     val cur_min = data.map(_.cur).min
     val cur_avg = data.map(_.cur).sum / data.size
 
-    val sc_temp_max = data.map(_.sc_volt_max).max
-    val sc_temp_min = data.map(_.sc_volt_min).min
+    val sc_temp_max = data.map(_.sc_temp_max).max
+    val sc_temp_min = data.map(_.sc_temp_min).min
 
     val gm_run_records = data.map(_.eng_spd).filter(_ >= 0).size
     val gm_run_time = gm_run_records * 10
 
 
-    val sc_volt_diff = data.map(e => e.sc_volt_max - e.sc_volt_min)
+    val sc_volt_diff = data.map(e => e.sc_volt_max - e.sc_volt_min).sortWith((s1,s2) => {s1 < s2})
     val sc_volt_diff_max = sc_volt_diff.max
 
     def fun(e:Seq[Double], p:Double):Int = (e.size * p).toInt
@@ -101,8 +101,10 @@ class BmsStats extends UserDefinedAggregateFunction {
     val volt_diff_index = Array(fun(sc_volt_diff ,0.01), fun(sc_volt_diff ,0.25),fun(sc_volt_diff ,0.5),fun(sc_volt_diff ,0.75),fun(sc_volt_diff ,0.99))
     val volt_diff_val = if (sc_volt_diff.size > 0) volt_diff_index.map( sc_volt_diff(_) ) else Array.fill(5)(0.0)
 
-    Row(volt_max, volt_min, volt_avg, cur_max, cur_min, cur_avg,
-      sc_temp_max, sc_temp_min, gm_run_time, gm_run_records,
+    Row(volt_max, volt_min, volt_avg,
+      cur_max, cur_min, cur_avg,
+      sc_temp_max, sc_temp_min,
+      gm_run_time, gm_run_records,
       sc_volt_diff_max, Row.fromSeq(volt_diff_val))
   }
 }
