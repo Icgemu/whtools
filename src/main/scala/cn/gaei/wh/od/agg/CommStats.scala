@@ -62,11 +62,12 @@ class CommStats extends UserDefinedAggregateFunction {
   }
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+
     val ts = input.getLong(0)
     val t1 = buffer.getLong(0)
     val t2 = buffer.getLong(1)
 
-    val soc = input.getDouble(5)
+    val soc = if (input.isNullAt(5)) -1.0 else input.getDouble(5)
     val soc1 = buffer.getDouble(4)
     val soc2 = buffer.getDouble(5)
 
@@ -89,10 +90,10 @@ class CommStats extends UserDefinedAggregateFunction {
       buffer(11) = Row(input.getDouble(3),input.getDouble(4))
     }
 
-    if (soc1 < soc){
+    if (soc > 0 && soc1 < soc){
       buffer(4) = soc
     }
-    if (soc2 > soc){
+    if (soc > 0 && soc2 > soc){
       buffer(5) = soc
     }
   }

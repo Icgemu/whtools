@@ -47,8 +47,10 @@ class MileStats extends UserDefinedAggregateFunction {
   }
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-    val arr = buffer.getSeq[Row](0) :+ (input)
-    buffer(0) = arr
+    if ( !input.isNullAt(3) && !input.isNullAt(4) ) {// odo / longitude /latitude is not null
+      val arr = buffer.getSeq[Row](0) :+ (input)
+      buffer(0) = arr
+    }
   }
 
   override def merge(b1: MutableAggregationBuffer, b2: Row): Unit = {
@@ -57,9 +59,11 @@ class MileStats extends UserDefinedAggregateFunction {
   }
 
   override def evaluate(buffer: Row): Any = {
-    val data = buffer.getSeq[Row](0).toList.map(e =>{
-
-      Input(e.getLong(0),e.getInt(1), new WGS84Point(e.getDouble(3), e.getDouble(2)), e.getDouble(4))
+    val data = buffer.getSeq[Row](0)
+//      .filter( e=> !e.isNullAt(4) && !e.isNullAt(3))// odo / longitude /latitude is not null
+      .map(e =>{
+      val eng_spd = if(e.isNullAt(1)) 0 else e.getInt(1)
+      Input(e.getLong(0),eng_spd, new WGS84Point(e.getDouble(3), e.getDouble(2)), e.getDouble(4))
     }) .sortWith((e1,e2) => {
       e1.ts < e2.ts
     })
@@ -99,6 +103,6 @@ class MileStats extends UserDefinedAggregateFunction {
         }
       }
     })
-    Row(dist_odo, dist_gps, fuel_dist_gps, elec_dist_gps, times, elec_time_gps, fuel_time_gps)
+    Row(dist_odo, dist_gps, elec_dist_gps, fuel_dist_gps, times, elec_time_gps, fuel_time_gps)
   }
 }

@@ -9,7 +9,7 @@ object OD {
   def main(args: Array[String]): Unit = {
 
     val sc = SparkSession.builder().config(new SparkConf()).getOrCreate()
-    val data = sc.read.parquet("/data/guobiao/parquet/d=2018051*")
+    val data = sc.read.parquet("/data/gb/parquet/*")
 
     import sc.implicits._
     import cn.gaei.wh._
@@ -24,18 +24,18 @@ object OD {
         && $"loc_lat84" < 55.8271 && $"veh_odo"> 0)
       .withColumn("keyst", when($"veh_st".equalTo(1), 1).otherwise(0))
       .od("tripId",$"vin",$"ts",$"keyst",$"veh_odo")
-//      .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
+      .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
 //      .select(from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
 //        $"loc_lon84",$"loc_lat84",$"city_id",$"city_name",$"veh_odo",$"veh_st", $"keyst",$"tripId")
 //      .sort($"ts")
       val stat = cache.groupBy($"vin",$"tripId").agg(
-//            comm_stats($"ts",$"city_id",$"city_name",$"loc_lon84",$"loc_lat84",$"veh_soc").as("stats"),
-//            mile_stats($"ts",when($"eng_spd".isNull, 0).otherwise($"eng_spd"),$"loc_lon84",$"loc_lat84",$"veh_odo").as("mile"),
-//            speed_stats($"ts",$"veh_spd").as("spd"),
+            comm_stats($"ts",$"city_id",$"city_name",$"loc_lon84",$"loc_lat84",$"veh_soc").as("stats"),
+            mile_stats($"ts",$"eng_spd",$"loc_lon84",$"loc_lat84",$"veh_odo").as("mile"),
+            speed_stats($"ts",$"veh_spd").as("spd"),
             bms_stats($"ts",$"veh_volt",$"veh_curr",
               $"data_batt_sc_volt_highest",$"data_batt_sc_volt_lowest",
               $"data_batt_temp_highest",$"data_batt_temp_lowestest",
-              when($"eng_spd".isNull, 0).otherwise($"eng_spd")
+              $"eng_spd"
             ).as("bms")
           )
 //  .explain(true)

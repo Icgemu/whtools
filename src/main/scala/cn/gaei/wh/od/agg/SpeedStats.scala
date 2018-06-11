@@ -65,8 +65,10 @@ class SpeedStats extends UserDefinedAggregateFunction {
   }
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-    val arr = buffer.getSeq[Row](0) :+ (input)
-    buffer(0) = arr
+    if (!input.isNullAt(1) ) {// speed is not null
+      val arr = buffer.getSeq[Row](0) :+ (input)
+      buffer(0) = arr
+    }
   }
 
   override def merge(b1: MutableAggregationBuffer, b2: Row): Unit = {
@@ -76,7 +78,9 @@ class SpeedStats extends UserDefinedAggregateFunction {
 
 
   override def evaluate(buffer: Row): Any = {
-    val data = buffer.getSeq[Row](0).map(e =>{
+    val data = buffer.getSeq[Row](0)
+//      .filter( !_.isNullAt(1) ) // speed is not null
+      .map(e =>{
       SpdInput(e.getLong(0), e.getDouble(1))
     }) .sortWith((e1,e2) => {
       e1.ts < e2.ts
