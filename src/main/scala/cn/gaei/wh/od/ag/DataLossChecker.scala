@@ -14,7 +14,7 @@ object DataLossChecker {
 
     val sc = SparkSession.builder().config(new SparkConf()).getOrCreate()
 
-    val data = sc.read.parquet("/data/AG/parquet/d=20180423/")
+    val data = sc.read.parquet("/data/AG/parquet/d=2018*/")
 
     import sc.implicits._
     import cn.gaei.wh._

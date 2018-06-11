@@ -6,10 +6,11 @@ import org.apache.spark.sql.types._
 
 class SpeedStats extends UserDefinedAggregateFunction {
 
-  case class Input(ts:Long, spd:Integer)
+  case class SpdInput(ts:Long, spd:Double)
+
   val InPutType = StructType(
     StructField("ts", LongType) ::
-      StructField("spd", IntegerType) ::
+      StructField("spd", DoubleType) ::
       Nil)
 
   override def inputSchema: StructType = InPutType
@@ -42,7 +43,6 @@ class SpeedStats extends UserDefinedAggregateFunction {
         StructField("d_90", IntegerType) ::
         StructField("d_100", IntegerType) ::
         StructField("d_110", IntegerType) ::
-        StructField("d_120", IntegerType) ::
         StructField("d_120_up", IntegerType) ::
         Nil)
     StructType(
@@ -51,7 +51,7 @@ class SpeedStats extends UserDefinedAggregateFunction {
         StructField("spd_avg_in_kmh", DoubleType) ::
         StructField("spd_run_avg_in_kmh", DoubleType) ::
         StructField("time_idle_in_min", DoubleType) ::
-        StructField("idle_record_cnt", DoubleType) ::
+        StructField("idle_record_cnt", IntegerType) ::
         StructField("acc_spd_percentile", Percentile) ::
         StructField("dec_spd_percentile", Percentile) ::
         StructField("spd_distribution", SPD_Distribution) ::
@@ -76,8 +76,8 @@ class SpeedStats extends UserDefinedAggregateFunction {
 
 
   override def evaluate(buffer: Row): Any = {
-    val data = buffer.getSeq[Row](0).toList.map(e =>{
-      Input(e.getLong(0),e.getInt(1))
+    val data = buffer.getSeq[Row](0).map(e =>{
+      SpdInput(e.getLong(0), e.getDouble(1))
     }) .sortWith((e1,e2) => {
       e1.ts < e2.ts
     })
@@ -87,15 +87,15 @@ class SpeedStats extends UserDefinedAggregateFunction {
     val spd_avg = data.map(_.spd).sum / data.size
     val run_data = data.map(_.spd).filter(_ >= 5.0)
     val idle_data = data.map(_.spd).filter(_ < 5.0)
-    val spd_run_avg = run_data.sum / run_data.size
+    val spd_run_avg = run_data.sum / (if(run_data.size > 0) run_data.size else 1)
 
     val idle_time = (idle_data.size * 10 ) / 60.0
     val idle_cnt = idle_data.size
-    val spd_dist = Array.fill(14)(0)
+    val spd_dist = Array.fill(13)(0)
     data.map( _.spd.toInt).foreach(spd => {
       val s = spd % 10
       var index = (spd - s) / 10
-      if(index > 12) {index = 13}
+      if(index > 12) {index = 12}
       spd_dist(index) = spd_dist(index) + 1
     })
 
@@ -107,18 +107,18 @@ class SpeedStats extends UserDefinedAggregateFunction {
       val (last, cur) = e
       val spd_diff = cur.spd - last.spd
       val time_diff = cur.ts - last.ts
-      (spd_diff *1000.0) / (time_diff/1000.0)
+      (spd_diff / 3.6 ) / (time_diff/1000.0)
     })
 
-    val acc = acc_all.filter( _ > 0 ).sortWith((s1,s2) => {s1 < s2})
-    val dec = acc_all.filter( _ < 0 ).sortWith((s1,s2) => {s1 > s2})
+    val acc = acc_all.filter( _ > 0.0 ).sortWith((s1,s2) => {s1 < s2})
+    val dec = acc_all.filter( _ < 0.0 ).sortWith((s1,s2) => {s1 > s2})
 
     def fun(e:Seq[Double], p:Double):Int = (e.size * p).toInt
 
     val acc_index = Array(fun(acc ,0.01), fun(acc ,0.25),fun(acc ,0.5),fun(acc ,0.75),fun(acc ,0.99))
     val dec_index = Array(fun(dec ,0.01), fun(dec ,0.25),fun(dec ,0.5),fun(dec ,0.75),fun(dec ,0.99))
-    val acc_val = acc_index.map( acc(_) )
-    val dec_val = dec_index.map( dec(_) )
+    val acc_val = if (acc.size > 0) acc_index.map( acc(_) ) else Array.fill(5)(0.0)
+    val dec_val = if (dec.size > 0) dec_index.map( dec(_) ) else Array.fill(5)(0.0)
     Row(spd_max, spd_min, spd_avg, spd_run_avg, idle_time, idle_cnt,
       Row.fromSeq(acc_val), Row.fromSeq(dec_val),Row.fromSeq(spd_dist))
   }

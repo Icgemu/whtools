@@ -37,14 +37,14 @@ object Location {
       val lvl = splits(4).toInt
       if (splits.length > 5) {
         val polygon = "POLYGON((" + splits(5) + "))"
-        println(
-          s"""
-             |${id}
-             |${pid}
-             |${en_name}
-             |${zh_name}
-             |${polygon.subSequence(0, 20)} ... ${polygon.substring(polygon.length - 20)}
-          """.stripMargin)
+//        println(
+//          s"""
+//             |${id}
+//             |${pid}
+//             |${en_name}
+//             |${zh_name}
+//             |${polygon.subSequence(0, 20)} ... ${polygon.substring(polygon.length - 20)}
+//          """.stripMargin)
 
         if (lvl < 7) {
           __id_city += (i -> CITY(i, pid, id, en_name, zh_name, polygon))

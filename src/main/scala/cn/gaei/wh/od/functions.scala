@@ -1,6 +1,6 @@
 package cn.gaei.wh.od
 
-import cn.gaei.wh.od.agg.{CommStats, MileStats}
+import cn.gaei.wh.od.agg.{BmsStats, CommStats, MileStats, SpeedStats}
 import org.apache.spark.sql.{Column, TypedColumn}
 
 object functions {
@@ -42,6 +42,22 @@ object functions {
                 ) = {
     val fn = new MileStats()
     fn(ts, eng_spd, lon84, lat84, odo)
+  }
+
+  def speed_stats(ts: Column,
+                 spd: Column
+                ) = {
+    val fn = new SpeedStats()
+    fn(ts, spd)
+  }
+
+  //ts:Long, volt:Double, cur:Double, sc_volt_max:Double,
+  //sc_volt_min:Double, sc_temp_max:Int, sc_temp_min:Int, eng_spd:Int
+  def bms_stats(ts: Column, volt: Column, cur: Column, sc_volt_max: Column,
+                sc_volt_min: Column, sc_temp_max: Column, sc_temp_min: Column, eng_spd: Column
+                 ) = {
+    val fn = new BmsStats()
+    fn(ts, volt,cur,sc_volt_max,sc_volt_min,sc_temp_max,sc_temp_min,eng_spd)
   }
 
 }
