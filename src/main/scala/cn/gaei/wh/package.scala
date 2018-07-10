@@ -1,6 +1,7 @@
 package cn.gaei
 
 import cn.gaei.wh.od.Trip
+import cn.gaei.wh.stop.StopChecker
 import org.apache.spark.sql.{Column, DataFrame, Dataset}
 import org.elasticsearch.spark.rdd.EsSpark
 
@@ -22,6 +23,10 @@ package object wh {
 
     def markLoss(idName: String,vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
       Trip.markLoss(ds, idName, vin, ts, keyst, odo)
+    }
+
+    def setStop(idName: String,vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
+      StopChecker.setStop(ds, idName, vin, ts, keyst, odo)
     }
 
     def saveES(resource: String, cfg: scala.collection.Map[String, String]): Unit ={
