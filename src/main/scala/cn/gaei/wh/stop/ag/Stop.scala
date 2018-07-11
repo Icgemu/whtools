@@ -13,38 +13,33 @@ object Stop {
 
     val sc = SparkSession.builder().config(new SparkConf()).getOrCreate()
 
-    val data = sc.read.parquet("/data/AG/parquet/*")
+    val data = sc.read.parquet("/data/AG/parquet/d=2018*")
 
     import sc.implicits._
     import cn.gaei.wh._
+    import cn.gaei.wh.stop.functions._
 
-    val out = new PrintWriter("./LMGGN1S55F1000510.csv")
-    val cache = data.filter($"vin".equalTo("LMGGN1S55F1000510"))
-      .filter($"date_str".startsWith("2018051"))
+    val out = new PrintWriter("./LMGFJ1S53H1S00098.csv")
+    val cache = data
+//      .filter($"vin".equalTo("LMGFJ1S53H1S00098"))
+      //.filter($"date_str".startsWith("2018051"))
       .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293 && $"loc_lat84" < 55.8271)
       .filter($"icm_totalodometer" > 0)
+      .filter($"bcm_keyst".equalTo(2))
       .filter($"ccs_chargerstartst".equalTo(1) || $"ccs_chargerstartst".isNull)
       .withColumn("keyst", when(($"bcm_keyst".isNull) || $"bcm_keyst".equalTo(0), 0).otherwise(1))
       .setStop("stopId", $"vin",$"ts",$"keyst",$"icm_totalodometer".cast(DoubleType))
       .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
-      .select($"date_str",
-            from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
-            $"loc_lon84",$"loc_lat84",$"icm_totalodometer",
-            $"bcm_keyst", $"keyst",$"ccs_chargerstartst",$"_genStopSt",$"stopId")
-          .sort($"ts")
-//    val stat = cache.groupBy($"vin",$"tripId").agg(
-//      comm_stats($"ts",$"city_id",$"city_name",$"loc_lon84",$"loc_lat84",$"bms_battsoc").as("stats"),
-//      mile_stats($"ts",$"ems_engspd",$"loc_lon84",$"loc_lat84",$"icm_totalodometer").as("mile"),
-//      speed_stats($"ts",$"bcs_vehspd").as("spd"),
-//      bms_stats($"ts",$"bms_battvolt".cast(DoubleType),$"bms_battcurr",
-//        $"bms_cellvoltmax",$"bms_cellvoltmin",
-//        $"bms_batttempmax".cast(IntegerType),$"bms_batttempmin".cast(IntegerType),
-//        $"ems_engspd"
-//      ).as("bms")
-//    )
+//      .select($"date_str",
+//            from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
+//            $"loc_lon84",$"loc_lat84",$"icm_totalodometer",
+//            $"bcm_keyst", $"keyst",$"ccs_chargerstartst",$"_genStopSt",$"stopId")
+//          .sort($"ts")
+    val stat = cache.groupBy($"vin",$"stopId").agg(
+      stop_stats($"ts",$"loc_lon84",$"loc_lat84",$"city_id",$"city_name").as("stats")
+    )
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
     out.close()
-
   }
 
 }

@@ -57,7 +57,7 @@ object StopChecker extends Serializable{
     val ws1 = Window.partitionBy(vin).orderBy(ts).rowsBetween(-1, 1)
     val ws2 = Window.partitionBy(vin).orderBy(ts).rowsBetween(Window.unboundedPreceding, Window.currentRow)
     val dff = ds.withColumn("_genStopSt", callUDF("_genStopSt", collect_list(struct(vin,ts, keyst, odo)).over(ws1)))
-          //.filter($"_genStopSt" > 0)
+//          .filter($"_genStopSt" > 0)
         .withColumn("__flg", when($"_genStopSt".equalTo(1), 1).otherwise(0))
       .withColumn(id, sum($"__flg").over(ws2))
     //dff.drop($"_genSt")
