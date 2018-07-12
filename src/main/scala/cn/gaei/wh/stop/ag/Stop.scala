@@ -19,9 +19,9 @@ object Stop {
     import cn.gaei.wh._
     import cn.gaei.wh.stop.functions._
 
-    val out = new PrintWriter("./LMGFJ1S53H1S00098.csv")
+    val out = new PrintWriter("./LMGGN1S51F1000455.csv")
     val cache = data
-//      .filter($"vin".equalTo("LMGFJ1S53H1S00098"))
+      .filter($"vin".equalTo("LMGGN1S51F1000455"))
       //.filter($"date_str".startsWith("2018051"))
       .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293 && $"loc_lat84" < 55.8271)
       .filter($"icm_totalodometer" > 0)
@@ -30,14 +30,14 @@ object Stop {
       .withColumn("keyst", when(($"bcm_keyst".isNull) || $"bcm_keyst".equalTo(0), 0).otherwise(1))
       .setStop("stopId", $"vin",$"ts",$"keyst",$"icm_totalodometer".cast(DoubleType))
       .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
-//      .select($"date_str",
-//            from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
-//            $"loc_lon84",$"loc_lat84",$"icm_totalodometer",
-//            $"bcm_keyst", $"keyst",$"ccs_chargerstartst",$"_genStopSt",$"stopId")
-//          .sort($"ts")
-    val stat = cache.groupBy($"vin",$"stopId").agg(
-      stop_stats($"ts",$"loc_lon84",$"loc_lat84",$"city_id",$"city_name").as("stats")
-    )
+      .select($"date_str",
+            from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"),
+            $"loc_lon84",$"loc_lat84",$"icm_totalodometer",
+            $"bcm_keyst", $"keyst",$"ccs_chargerstartst",$"_genStopSt",$"stopId")
+          .sort($"ts")
+//    val stat = cache.groupBy($"vin",$"stopId").agg(
+//      stop_stats($"ts",$"loc_lon84",$"loc_lat84",$"city_id",$"city_name").as("stats")
+//    )
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
     out.close()
   }
