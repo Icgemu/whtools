@@ -1,5 +1,6 @@
 package cn.gaei
 
+import cn.gaei.wh.charge.ChargeSplit
 import cn.gaei.wh.od.Trip
 import cn.gaei.wh.stop.StopChecker
 import org.apache.spark.sql.{Column, DataFrame, Dataset}
@@ -27,6 +28,9 @@ package object wh {
 
     def setStop(idName: String,vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
       StopChecker.setStop(ds, idName, vin, ts, keyst, odo)
+    }
+    def setChargeId(idName: String,vin:Column,ts:Column,chargest:Column,odo:Column): DataFrame =  {
+      ChargeSplit.setChargeId(ds, idName, vin, ts, chargest, odo)
     }
 
     def saveES(resource: String, cfg: scala.collection.Map[String, String]): Unit ={

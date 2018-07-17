@@ -92,6 +92,7 @@ object Trip extends Serializable{
     val ws1 = Window.partitionBy(vin).orderBy(ts).rowsBetween(-1, 0)
     val dff = ds.withColumn("_genSt", callUDF("_genSt", collect_list(struct(ts, keyst)).over(ws1)))
       .withColumn(id, callUDF("_genTripID", collect_list(struct(vin,ts, $"_genSt",odo)).over(ws1)))
+
     dff.drop($"_genSt")
   }
 
