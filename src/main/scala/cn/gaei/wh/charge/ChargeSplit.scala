@@ -10,9 +10,8 @@ object ChargeSplit extends Serializable {
 
   private[this] def __is_stop_segment(t1:Segment ,t2:Segment):Boolean = {
     val ts_diff = t2.ts - t1.ts
-//    val odo = t2.odo - t1.odo
-    //val avg_speed = ((odo ) * 3600.0)/(((ts_diff) / 1000.0))
-    val is_stop = (ts_diff > 300 * 1000) //&& avg_speed < 10 // 5 minutes and avg_speed >10km/h
+    val soc_diff = t2.odo - t1.odo
+    val is_stop = (ts_diff > 30 * 60 * 1000) && soc_diff < 0 // 30 minutes and soc_diff < 0
     is_stop
   }
 
@@ -26,11 +25,11 @@ object ChargeSplit extends Serializable {
   }
 
   def  setChargeId[T : ClassTag](ds: Dataset[T],id: String,
-                                 vin:Column,ts:Column,chargeSt:Column,odo:Column): DataFrame =  {
+                                 vin:Column,ts:Column,chargeSt:Column,soc:Column): DataFrame =  {
 
     val sc= ds.sparkSession
     sc.udf.register("_genChargeSt", (e: Seq[Row]) => {
-      val arr = e.map(e => {Segment(e.getString(0), e.getLong(1),e.getInt(2),e.getDouble(3))})
+      val arr = e.map(e => {Segment(e.getString(0), e.getLong(1),e.getInt(2), e.getDouble(3))})
       val res = arr.size match {
         case 2 => { // window
           if(__is_stop(arr(0), arr(1))) 1 else 0 // charge start
@@ -46,7 +45,7 @@ object ChargeSplit extends Serializable {
     val ws1 = Window.partitionBy(vin).orderBy(ts).rowsBetween(-1, Window.currentRow)
     val ws2 = Window.partitionBy(vin).orderBy(ts).rowsBetween(Window.unboundedPreceding, Window.currentRow)
     //    val ws3 = Window.partitionBy(vin).orderBy(ts).rowsBetween(Window.currentRow, 1)
-    val dff = ds.withColumn("_genChargeSt", callUDF("_genChargeSt", collect_list(struct(vin, ts, chargeSt, odo)).over(ws1)))
+    val dff = ds.withColumn("_genChargeSt", callUDF("_genChargeSt", collect_list(struct(vin, ts, chargeSt,soc)).over(ws1)))
       //.filter($"_genChargeSt" > 0)
       //.withColumn("__flg", when($"_genStopSt".equalTo(1), 1).otherwise(0))
       .withColumn(id, sum($"_genChargeSt").over(ws2))
