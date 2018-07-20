@@ -21,14 +21,14 @@ object Charger {
 
     val out = new PrintWriter("./LMGGN1S52G1004256.csv")
     val cache = data
-      .filter($"vin".equalTo("LMGGN1S52G1004256"))
+//      .filter($"vin".equalTo("LMGGN1S52G1004256"))
 //      .filter($"date_str".startsWith("2018051"))
       .filter($"loc_lon84" > 72.004 && $"loc_lon84" < 137.8347 && $"loc_lat84" > 0.8293 && $"loc_lat84" < 55.8271)
 //      .filter($"icm_totalodometer" > 0)
 
       .filter($"bms_battst".equalTo(12) && $"ccs_chargevolt" >0 && $"ccs_chargecur" > 0)
       //.withColumn("chargest", when($"ccs_chargerstartst".equalTo(0), 0).otherwise(1))
-      .setChargeId("chargeId", $"vin",$"ts",$"ccs_chargerstartst",$"bms_battsoc")
+      .setChargeId("chargeId", $"vin",$"ts",$"bms_battsoc")
 //      .select($"date_str", from_unixtime($"ts"/1000,"yyyy-MM-dd HH:mm:ss"), $"loc_lon84",$"loc_lat84",
 //            $"ccs_chargerstartst",$"ccs_chargevolt",$"ccs_chargecur", $"bms_battst", $"bms_battsoc",$"chargeId")
 //          .sort($"ts")
@@ -38,7 +38,7 @@ object Charger {
         $"bms_battsoc"
       ).as("stats"), avg($"loc_lon84").as("loc_lon84"),avg($"loc_lat84").as("loc_lat84")
     )
-  .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
+  .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84").filter($"stats.soc_hops_cnt" > 0)
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
 //    println(cache)
     out.close()

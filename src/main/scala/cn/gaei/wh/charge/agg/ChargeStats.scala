@@ -38,6 +38,9 @@ class ChargeStats extends UserDefinedAggregateFunction {
       StructField("start_ts", LongType) ::
         StructField("end_time", LongType) ::
         StructField("charge_time", DoubleType) ::
+        StructField("doc_cnt", LongType) ::
+        StructField("soc_hops_cnt", IntegerType) ::
+        StructField("soc_hops_max", DoubleType) ::
         StructField("start_soc", DoubleType) ::
         StructField("end_soc", DoubleType) ::
         StructField("volt_max", DoubleType) ::
@@ -81,12 +84,14 @@ class ChargeStats extends UserDefinedAggregateFunction {
 
       val sc_temp_max = if(e.isNullAt(3)) Int.MinValue else e.getInt(3)
       val sc_temp_min = if(e.isNullAt(4)) Int.MinValue else e.getInt(4)
-      val soc = if(e.isNullAt(5)) 0.0 else e.getDouble(5)
+      val soc = if(e.isNullAt(5)) Double.MinValue else e.getDouble(5)
 
       SpdInput(ts, volt, cur,sc_temp_max, sc_temp_min, soc)
     }) .sortWith((e1,e2) => {
       e1.ts < e2.ts
     })
+
+    val doc_cnt = data.size
 
     val st = data.head.ts
     val et = data.last.ts
@@ -105,6 +110,15 @@ class ChargeStats extends UserDefinedAggregateFunction {
     val cur_min = cur_data.min
     val cur_avg = cur_data.sum / cur_data.size
 
+    val soc_data = data.filter( _.soc > Double.MinValue ).map(_.soc)
+    val tails = soc_data.tail
+    val heads = soc_data.drop(1)
+    val hops = heads.zip(tails).map(e => {
+      e._2 - e._1
+    })
+    val hops_cnt = hops.filter(_ > 0.1).size
+    val hops_max = if(hops.size >0 ) hops.max else 0.0
+
     val sc_temp_max = data.map(_.sc_temp_max).filter(_ > Int.MinValue).max
     val sc_temp_min = data.map(_.sc_temp_min).filter(_ > Int.MinValue).min
 
@@ -120,7 +134,7 @@ class ChargeStats extends UserDefinedAggregateFunction {
     val volt_val = if (volt_data.size > 0) volt_index.map( volt_data(_) ) else Array.fill(5)(0.0)
     val cur_val = if (cur_data.size > 0) cur_index.map( cur_data(_) ) else Array.fill(5)(0.0)
 
-    Row(st,et,h,start_soc,end_soc,
+    Row(st,et, h,doc_cnt,hops_cnt,hops_max, start_soc,end_soc,
       volt_max, volt_min, volt_avg, Row.fromSeq(volt_val),
       cur_max, cur_min, cur_avg,Row.fromSeq(cur_val),
       sc_temp_max, sc_temp_min,

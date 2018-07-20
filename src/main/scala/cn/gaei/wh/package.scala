@@ -29,8 +29,8 @@ package object wh {
     def setStop(idName: String,vin:Column,ts:Column,keyst:Column,odo:Column): DataFrame =  {
       StopChecker.setStop(ds, idName, vin, ts, keyst, odo)
     }
-    def setChargeId(idName: String,vin:Column,ts:Column,chargest:Column,soc:Column): DataFrame =  {
-      ChargeSplit.setChargeId(ds, idName, vin, ts, chargest, soc)
+    def setChargeId(idName: String,vin:Column,ts:Column,soc:Column): DataFrame =  {
+      ChargeSplit.setChargeId(ds, idName, vin, ts, soc)
     }
 
     def saveES(resource: String, cfg: scala.collection.Map[String, String]): Unit ={
