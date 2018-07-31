@@ -38,7 +38,8 @@ object Charger {
         $"bms_battsoc"
       ).as("stats"), avg($"loc_lon84").as("loc_lon84"),avg($"loc_lat84").as("loc_lat84")
     )
-  .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84").filter($"stats.soc_hops_cnt" > 0)
+  .setLocation("city_id","city_name",$"loc_lat84",$"loc_lon84")
+//  .filter($"stats.soc_hops_cnt" > 0)
       .collect().foreach(e=>{out.write(e.mkString(",")+"\n")})
 //    println(cache)
     out.close()

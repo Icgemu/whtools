@@ -38,7 +38,7 @@ class ChargeStats extends UserDefinedAggregateFunction {
       StructField("start_ts", LongType) ::
         StructField("end_time", LongType) ::
         StructField("charge_time", DoubleType) ::
-        StructField("doc_cnt", LongType) ::
+        StructField("doc_cnt", IntegerType) ::
         StructField("soc_hops_cnt", IntegerType) ::
         StructField("soc_hops_max", DoubleType) ::
         StructField("start_soc", DoubleType) ::

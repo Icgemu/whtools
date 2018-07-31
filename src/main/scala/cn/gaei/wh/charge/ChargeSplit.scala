@@ -32,7 +32,7 @@ object ChargeSplit extends Serializable {
 
     val sc= ds.sparkSession
     sc.udf.register("_genChargeSt", (e: Seq[Row]) => {
-      val arr = e.map(e => {Segment(e.getString(0), e.getLong(1) , 0 , e.getDouble(3))})
+      val arr = e.map(e => {Segment(e.getString(0), e.getLong(1) , 0 , e.getDouble(2))})
       val res = arr.size match {
         case 2 => { // window
           if(__is_stop(arr(0), arr(1))) 1 else 0 // charge start
