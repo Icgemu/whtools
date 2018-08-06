@@ -100,7 +100,7 @@ class ChargeStats extends UserDefinedAggregateFunction {
     val start_soc = data.head.soc
     val end_soc = data.last.soc
 
-    val volt_data = data.filter( _.volt > Double.MinValue ).map(_.volt)
+    val volt_data = data.filter( _.volt > Double.MinValue ).map(_.volt).sorted
     val volt_max = volt_data.max
     val volt_min = volt_data.min
     val volt_avg = volt_data.sum / volt_data.size
